@@ -1,0 +1,45 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+flows_cred.json
+settings.js
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Laravel
+vendor/
+storage/logs/
+bootstrap/cache/*.php
+
+# Node-RED runtime files
+.node-red/
+NodeREDData/
+flows_cred.json
+
+# Arduino build files
+build/
+*.hex
+*.elf
+
+# IDE and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
