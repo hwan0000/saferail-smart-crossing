@@ -1,0 +1,772 @@
+[
+    {
+        "id": "71741d5d0b838803",
+        "type": "tab",
+        "label": "플로우 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "9477d47286cf73b1",
+        "type": "serial in",
+        "z": "71741d5d0b838803",
+        "name": "Arduino Serial",
+        "serial": "0c5558e2566e5982",
+        "x": 110,
+        "y": 100,
+        "wires": [
+            [
+                "bd5a0404705032fd",
+                "2c73af04095f0292"
+            ]
+        ]
+    },
+    {
+        "id": "3495975003307098",
+        "type": "debug",
+        "z": "71741d5d0b838803",
+        "name": "Parsed Arduino Data",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "bd5a0404705032fd",
+        "type": "function",
+        "z": "71741d5d0b838803",
+        "name": "Parse Arduino Line",
+        "func": "const line = String(msg.payload ?? \"\").trim();\n\n// Arduino가 출력하는 상태변경 설명문은 분석하지 않음\n// 예: ==> SAFE -> WARNING\nif (!line.startsWith(\"[state=\")) {\n    return null;\n}\n\n// 예시 입력:\n// [state=SAFE] A=35cm (trig=no)  B=35cm (trig=no)\n// [state=DANGER entry=A] A=10cm (trig=YES)  B=-1cm (trig=YES) [settling]\n\nconst pattern =\n    /^\\[state=(SAFE|WARNING|DANGER)(?:\\s+entry=([AB]))?\\]\\s+A=(-?\\d+)cm\\s+\\(trig=(YES|no)\\)\\s+B=(-?\\d+)cm\\s+\\(trig=(YES|no)\\)(?:\\s+\\[settling\\])?$/i;\n\nconst match = line.match(pattern);\n\nif (!match) {\n    node.warn(\"Parse failed: \" + line);\n    return null;\n}\n\nmsg.payload = {\n    timestamp: Date.now(),\n\n    state: match[1].toUpperCase(),\n    entry: match[2] ? match[2].toUpperCase() : null,\n\n    distanceA: Number(match[3]),\n    triggeredA: match[4].toUpperCase() === \"YES\",\n\n    distanceB: Number(match[5]),\n    triggeredB: match[6].toUpperCase() === \"YES\",\n\n    // 서보모터 움직임으로 센서가 흔들리는 500ms 구간\n    settling: line.includes(\"[settling]\")\n};\n\nmsg.topic = \"train_gate_sensor\";\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 40,
+        "wires": [
+            [
+                "3495975003307098",
+                "659eddd5f56bef82",
+                "c9f657663b2ee387",
+                "ba6943c93cd7ee42"
+            ]
+        ]
+    },
+    {
+        "id": "2c73af04095f0292",
+        "type": "debug",
+        "z": "71741d5d0b838803",
+        "name": "Raw Serial",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 410,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "659eddd5f56bef82",
+        "type": "switch",
+        "z": "71741d5d0b838803",
+        "name": "State Switch",
+        "property": "payload.state",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "SAFE",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "WARNING",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "DANGER",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 3,
+        "x": 610,
+        "y": 100,
+        "wires": [
+            [
+                "0f3f751e40e53eae"
+            ],
+            [
+                "5f0dc21f7a9ce644"
+            ],
+            [
+                "43a24f85288d283b"
+            ]
+        ]
+    },
+    {
+        "id": "0f3f751e40e53eae",
+        "type": "debug",
+        "z": "71741d5d0b838803",
+        "name": "SAFE Debug",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 810,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "5f0dc21f7a9ce644",
+        "type": "debug",
+        "z": "71741d5d0b838803",
+        "name": "WARNING Debug",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 830,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "43a24f85288d283b",
+        "type": "debug",
+        "z": "71741d5d0b838803",
+        "name": "DANGER Debug",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 830,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "c9f657663b2ee387",
+        "type": "delay",
+        "z": "71741d5d0b838803",
+        "name": "AI Sample Rate",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "10",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": true,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 480,
+        "y": 260,
+        "wires": [
+            [
+                "0301865eb85e66f8"
+            ]
+        ]
+    },
+    {
+        "id": "0301865eb85e66f8",
+        "type": "function",
+        "z": "71741d5d0b838803",
+        "name": "AI Passage Validator",
+        "func": "const p = msg.payload;\n\nif (!p || typeof p !== \"object\") {\n    return null;\n}\n\nconst now = Number(p.timestamp) || Date.now();\n\n/*\n * 임시 판정 기준\n * 실제 기차 모형의 속도와 센서 간격에 맞춰 나중에 조정\n */\nconst MIN_DETECTION_MS = 300;  // 정상 감지는 최소 0.3초\nconst MIN_GAP_MS = 200;  // A와 B가 최소 0.2초 차이로 작동\nconst MAX_GAP_MS = 10000; // 다음 센서가 10초 안에 작동\nconst NOISE_WAIT_MS = 1000; // 순간 감지 후 1초 대기\nconst BLOCKED_MS = 5000; // 한 센서가 5초 이상 막힘\nconst FAULT_COUNT = 5;    // -1이 5회 연속 발생\nconst RECOVERY_COUNT = 10;   // 정상값 10회 연속이면 오류 복구\nconst CLEAR_COUNT = 3;    // 두 센서가 3회 연속 정상 해제\n\nlet s = context.get(\"validatorState\") || {\n    phase: \"IDLE\",\n\n    first: null,\n    firstAt: null,\n    secondAt: null,\n    firstClearedAt: null,\n\n    aOnSince: null,\n    bOnSince: null,\n    lastDurationA: 0,\n    lastDurationB: 0,\n\n    errorA: 0,\n    errorB: 0,\n    totalErrorA: 0,\n    totalErrorB: 0,\n\n    faultLatched: false,\n    validStreak: 0,\n    clearStreak: 0\n};\n\nfunction saveAndReturn(output) {\n    context.set(\"validatorState\", s);\n    return output;\n}\n\nfunction durationA() {\n    if (s.aOnSince !== null) {\n        return now - s.aOnSince;\n    }\n    return s.lastDurationA;\n}\n\nfunction durationB() {\n    if (s.bOnSince !== null) {\n        return now - s.bOnSince;\n    }\n    return s.lastDurationB;\n}\n\nfunction direction() {\n    if (s.first === \"A\") return \"A_TO_B\";\n    if (s.first === \"B\") return \"B_TO_A\";\n    return null;\n}\n\nfunction makeResult(result, reason) {\n    const colors = {\n        NORMAL_PASS: \"green\",\n        BLOCKED: \"red\",\n        SENSOR_FAULT: \"red\",\n        NOISE: \"yellow\",\n        UNKNOWN: \"grey\"\n    };\n\n    node.status({\n        fill: colors[result] || \"grey\",\n        shape: \"dot\",\n        text: result\n    });\n\n    return {\n        topic: \"ai_result\",\n        payload: {\n            result: result,\n            reason: reason,\n\n            timestamp: new Date(now).toISOString(),\n            arduinoState: p.state,\n            entry: p.entry,\n\n            direction: direction(),\n\n            gap_ms:\n                s.firstAt !== null && s.secondAt !== null\n                    ? s.secondAt - s.firstAt\n                    : null,\n\n            duration_A_ms: durationA(),\n            duration_B_ms: durationB(),\n\n            error_count_A: s.totalErrorA,\n            error_count_B: s.totalErrorB,\n\n            distance_A_cm: p.distanceA,\n            distance_B_cm: p.distanceB\n        }\n    };\n}\n\nfunction resetEvent() {\n    s.phase = \"IDLE\";\n\n    s.first = null;\n    s.firstAt = null;\n    s.secondAt = null;\n    s.firstClearedAt = null;\n\n    s.aOnSince = null;\n    s.bOnSince = null;\n    s.lastDurationA = 0;\n    s.lastDurationB = 0;\n\n    s.totalErrorA = 0;\n    s.totalErrorB = 0;\n    s.clearStreak = 0;\n\n    node.status({\n        fill: \"green\",\n        shape: \"ring\",\n        text: \"MONITORING\"\n    });\n}\n\n/*\n * 서보모터가 움직이는 settling 구간은 센서 오류 계산에서 제외.\n * 현재 Arduino 코드에서 이 구간에 일시적인 -1이 발생할 수 있음.\n */\nif (p.settling === true) {\n    node.status({\n        fill: \"blue\",\n        shape: \"ring\",\n        text: \"SERVO SETTLING\"\n    });\n\n    return saveAndReturn(null);\n}\n\nconst invalidA =\n    p.distanceA === null ||\n    p.distanceA === undefined ||\n    Number(p.distanceA) === -1;\n\nconst invalidB =\n    p.distanceB === null ||\n    p.distanceB === undefined ||\n    Number(p.distanceB) === -1;\n\n/*\n * 연속적인 -1 오류 횟수 계산\n */\nif (invalidA) {\n    s.errorA++;\n    s.totalErrorA++;\n} else {\n    s.errorA = 0;\n}\n\nif (invalidB) {\n    s.errorB++;\n    s.totalErrorB++;\n} else {\n    s.errorB = 0;\n}\n\n/*\n * 센서 오류 판정\n */\nif (s.errorA >= FAULT_COUNT || s.errorB >= FAULT_COUNT) {\n    let output = null;\n\n    if (!s.faultLatched) {\n        s.faultLatched = true;\n        s.phase = \"WAIT_CLEAR\";\n\n        let faultySensor = \"A and B\";\n\n        if (s.errorA >= FAULT_COUNT && s.errorB < FAULT_COUNT) {\n            faultySensor = \"A\";\n        } else if (\n            s.errorB >= FAULT_COUNT &&\n            s.errorA < FAULT_COUNT\n        ) {\n            faultySensor = \"B\";\n        }\n\n        output = makeResult(\n            \"SENSOR_FAULT\",\n            \"Repeated -1 readings from sensor \" + faultySensor\n        );\n    }\n\n    return saveAndReturn(output);\n}\n\n/*\n * SENSOR_FAULT 이후 두 센서가 일정 시간 정상이어야 복구\n */\nif (s.faultLatched) {\n    if (!invalidA && !invalidB) {\n        s.validStreak++;\n    } else {\n        s.validStreak = 0;\n    }\n\n    if (s.validStreak >= RECOVERY_COUNT) {\n        s.faultLatched = false;\n        s.validStreak = 0;\n        resetEvent();\n    }\n\n    return saveAndReturn(null);\n}\n\n/*\n * 1~4회의 순간적인 -1은 바로 통과 판정에 사용하지 않고\n * 다음 정상 데이터를 기다림\n */\nif (invalidA || invalidB) {\n    return saveAndReturn(null);\n}\n\n/*\n * Arduino는 -1도 trig=YES로 보내므로\n * 반드시 유효한 거리값일 때만 실제 감지로 인정\n */\nconst activeA = Boolean(p.triggeredA) && !invalidA;\nconst activeB = Boolean(p.triggeredB) && !invalidB;\n\n/*\n * 각 센서 감지 지속시간 계산\n */\nif (activeA && s.aOnSince === null) {\n    s.aOnSince = now;\n}\n\nif (!activeA && s.aOnSince !== null) {\n    s.lastDurationA = now - s.aOnSince;\n    s.aOnSince = null;\n}\n\nif (activeB && s.bOnSince === null) {\n    s.bOnSince = now;\n}\n\nif (!activeB && s.bOnSince !== null) {\n    s.lastDurationB = now - s.bOnSince;\n    s.bOnSince = null;\n}\n\n/*\n * 이전 판정이 끝난 후 두 센서가 완전히 해제되는 것을 기다림\n */\nif (s.phase === \"WAIT_CLEAR\") {\n    if (!activeA && !activeB) {\n        s.clearStreak++;\n    } else {\n        s.clearStreak = 0;\n    }\n\n    if (s.clearStreak >= CLEAR_COUNT) {\n        resetEvent();\n    }\n\n    return saveAndReturn(null);\n}\n\n/*\n * 한쪽 센서가 너무 오래 막혀 있으면 BLOCKED\n */\nconst aBlocked =\n    activeA &&\n    s.aOnSince !== null &&\n    now - s.aOnSince >= BLOCKED_MS;\n\nconst bBlocked =\n    activeB &&\n    s.bOnSince !== null &&\n    now - s.bOnSince >= BLOCKED_MS;\n\nif (aBlocked || bBlocked) {\n    const blockedSensor =\n        aBlocked && bBlocked ? \"A and B\" :\n            aBlocked ? \"A\" : \"B\";\n\n    const output = makeResult(\n        \"BLOCKED\",\n        \"Sensor \" + blockedSensor + \" blocked for over 5 seconds\"\n    );\n\n    s.phase = \"WAIT_CLEAR\";\n    return saveAndReturn(output);\n}\n\n/*\n * 아무것도 감지되지 않은 대기 상태\n */\nif (s.phase === \"IDLE\") {\n    if (!activeA && !activeB) {\n        node.status({\n            fill: \"green\",\n            shape: \"ring\",\n            text: \"MONITORING\"\n        });\n\n        return saveAndReturn(null);\n    }\n\n    s.firstAt = now;\n    s.firstClearedAt = null;\n    s.secondAt = null;\n    s.lastDurationA = 0;\n    s.lastDurationB = 0;\n    s.totalErrorA = 0;\n    s.totalErrorB = 0;\n\n    /*\n     * 첫 샘플부터 A와 B가 동시에 감지되면 비정상 패턴\n     */\n    if (activeA && activeB) {\n        const output = makeResult(\n            \"UNKNOWN\",\n            \"Both sensors activated simultaneously\"\n        );\n\n        s.phase = \"WAIT_CLEAR\";\n        return saveAndReturn(output);\n    }\n\n    s.first = activeA ? \"A\" : \"B\";\n    s.phase = \"WAIT_SECOND\";\n\n    node.status({\n        fill: \"yellow\",\n        shape: \"dot\",\n        text: \"FIRST SENSOR: \" + s.first\n    });\n\n    return saveAndReturn(null);\n}\n\n/*\n * 첫 번째 센서 작동 후 반대쪽 센서를 기다리는 단계\n */\nif (s.phase === \"WAIT_SECOND\") {\n    const firstActive =\n        s.first === \"A\" ? activeA : activeB;\n\n    const secondActive =\n        s.first === \"A\" ? activeB : activeA;\n\n    const firstDuration =\n        s.first === \"A\" ? durationA() : durationB();\n\n    if (!firstActive && s.firstClearedAt === null) {\n        s.firstClearedAt = now;\n    }\n\n    /*\n     * 반대쪽 센서가 작동함\n     */\n    if (secondActive) {\n        s.secondAt = now;\n\n        const gap = s.secondAt - s.firstAt;\n\n        if (gap < MIN_GAP_MS) {\n            const output = makeResult(\n                \"UNKNOWN\",\n                \"A and B activated too close together\"\n            );\n\n            s.phase = \"WAIT_CLEAR\";\n            return saveAndReturn(output);\n        }\n\n        s.phase = \"SECOND_ACTIVE\";\n\n        node.status({\n            fill: \"yellow\",\n            shape: \"dot\",\n            text: \"SECOND SENSOR DETECTED\"\n        });\n\n        return saveAndReturn(null);\n    }\n\n    /*\n     * 첫 센서가 아주 짧게 작동하고 반대 센서가 작동하지 않음\n     */\n    if (\n        s.firstClearedAt !== null &&\n        now - s.firstClearedAt >= NOISE_WAIT_MS &&\n        firstDuration < MIN_DETECTION_MS\n    ) {\n        const output = makeResult(\n            \"NOISE\",\n            \"Brief detection without activation of the opposite sensor\"\n        );\n\n        s.phase = \"WAIT_CLEAR\";\n        return saveAndReturn(output);\n    }\n\n    /*\n     * 10초가 지나도 반대쪽 센서가 작동하지 않음\n     */\n    if (now - s.firstAt >= BLOCKED_MS) {\n        const output = makeResult(\n            \"BLOCKED\",\n            \"Opposite sensor did not activate within 5 seconds\"\n        );\n\n        s.phase = \"WAIT_CLEAR\";\n        return saveAndReturn(output);\n    }\n\n    return saveAndReturn(null);\n}\n\n/*\n * 반대쪽 센서가 작동한 후 해제되기를 기다림\n */\nif (s.phase === \"SECOND_ACTIVE\") {\n    const secondActive =\n        s.first === \"A\" ? activeB : activeA;\n\n    if (secondActive) {\n        return saveAndReturn(null);\n    }\n\n    const gap = s.secondAt - s.firstAt;\n    const firstDuration =\n        s.first === \"A\" ? durationA() : durationB();\n\n    const secondDuration =\n        s.first === \"A\" ? durationB() : durationA();\n\n    let output;\n\n    if (\n        gap >= MIN_GAP_MS &&\n        gap <= MAX_GAP_MS &&\n        firstDuration >= MIN_DETECTION_MS &&\n        secondDuration >= MIN_DETECTION_MS\n    ) {\n        output = makeResult(\n            \"NORMAL_PASS\",\n            \"Valid \" + direction() + \" passage sequence\"\n        );\n    } else {\n        output = makeResult(\n            \"UNKNOWN\",\n            \"Passage sequence completed with abnormal timing\"\n        );\n    }\n\n    s.phase = \"WAIT_CLEAR\";\n    return saveAndReturn(output);\n}\n\nreturn saveAndReturn(null);",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 340,
+        "wires": [
+            [
+                "8a30d9550abc4181",
+                "d51ee819ffbb508f",
+                "dd2f1e932e8c85d1",
+                "995393ed5ab639f9"
+            ]
+        ]
+    },
+    {
+        "id": "8a30d9550abc4181",
+        "type": "switch",
+        "z": "71741d5d0b838803",
+        "name": "AI Result Switch",
+        "property": "payload.result",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "NORMAL_PASS",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "BLOCKED",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "SENSOR_FAULT",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "NOISE",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "UNKNOWN",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 5,
+        "x": 820,
+        "y": 320,
+        "wires": [
+            [
+                "688fec9cfefb2925"
+            ],
+            [
+                "f131cabe1f5f5bbd"
+            ],
+            [
+                "371a6322a8cad487"
+            ],
+            [
+                "e0169f9e326932e9"
+            ],
+            [
+                "4e312a0728a63fda"
+            ]
+        ]
+    },
+    {
+        "id": "688fec9cfefb2925",
+        "type": "debug",
+        "z": "71741d5d0b838803",
+        "name": "NORMAL_PASS Debug",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1070,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "f131cabe1f5f5bbd",
+        "type": "debug",
+        "z": "71741d5d0b838803",
+        "name": "BLOCKED Debug",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1050,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "371a6322a8cad487",
+        "type": "debug",
+        "z": "71741d5d0b838803",
+        "name": "SENSOR_FAULT Debug",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1070,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "e0169f9e326932e9",
+        "type": "debug",
+        "z": "71741d5d0b838803",
+        "name": "NOISE Debug",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1060,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "4e312a0728a63fda",
+        "type": "debug",
+        "z": "71741d5d0b838803",
+        "name": "UNKNOWN Debug",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1050,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "d51ee819ffbb508f",
+        "type": "debug",
+        "z": "71741d5d0b838803",
+        "name": "AI Direct Debug",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 740,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "3967b8d3d72a0072",
+        "type": "inject",
+        "z": "71741d5d0b838803",
+        "name": "LABEL NORMAL_PASS",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "NORMAL_PASS",
+        "payloadType": "str",
+        "x": 290,
+        "y": 520,
+        "wires": [
+            [
+                "65cb40e36e904d72"
+            ]
+        ]
+    },
+    {
+        "id": "9a100558d1ae6800",
+        "type": "inject",
+        "z": "71741d5d0b838803",
+        "name": "LABEL BLOCKED",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "BLOCKED",
+        "payloadType": "str",
+        "x": 270,
+        "y": 560,
+        "wires": [
+            [
+                "65cb40e36e904d72"
+            ]
+        ]
+    },
+    {
+        "id": "891b19f9a5eb5cd0",
+        "type": "inject",
+        "z": "71741d5d0b838803",
+        "name": "LABEL SENSOR_FAULT",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "SENSOR_FAULT",
+        "payloadType": "str",
+        "x": 290,
+        "y": 600,
+        "wires": [
+            [
+                "65cb40e36e904d72"
+            ]
+        ]
+    },
+    {
+        "id": "21c037ba9a70d608",
+        "type": "inject",
+        "z": "71741d5d0b838803",
+        "name": "LABEL NOISE",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "NOISE",
+        "payloadType": "str",
+        "x": 260,
+        "y": 640,
+        "wires": [
+            [
+                "65cb40e36e904d72"
+            ]
+        ]
+    },
+    {
+        "id": "09c898af2601b445",
+        "type": "inject",
+        "z": "71741d5d0b838803",
+        "name": "LABEL UNKNOWN",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "UNKNOWN",
+        "payloadType": "str",
+        "x": 270,
+        "y": 680,
+        "wires": [
+            [
+                "65cb40e36e904d72"
+            ]
+        ]
+    },
+    {
+        "id": "65cb40e36e904d72",
+        "type": "function",
+        "z": "71741d5d0b838803",
+        "name": "Set Training Label",
+        "func": "const allowedLabels = [\n    \"NORMAL_PASS\",\n    \"BLOCKED\",\n    \"SENSOR_FAULT\",\n    \"NOISE\",\n    \"UNKNOWN\"\n];\n\nconst label = String(msg.payload || \"\").trim().toUpperCase();\n\nif (!allowedLabels.includes(label)) {\n    node.error(\"Invalid training label: \" + label);\n    return null;\n}\n\n// 선택한 정답을 Node-RED flow 메모리에 저장\nflow.set(\"trainingLabel\", label);\n\nnode.status({\n    fill: \"blue\",\n    shape: \"dot\",\n    text: \"LABEL: \" + label\n});\n\n// 다른 노드로 메시지를 보낼 필요는 없음\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 610,
+        "y": 560,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "dd2f1e932e8c85d1",
+        "type": "function",
+        "z": "71741d5d0b838803",
+        "name": "Build Training Row",
+        "func": "const event = msg.payload;\nconst label = flow.get(\"trainingLabel\");\n\nif (!label) {\n    node.warn(\"Select a training label before performing the test.\");\n    return null;\n}\n\nif (!event || typeof event !== \"object\") {\n    return null;\n}\n\nfunction numberOr(value, fallback) {\n    const number = Number(value);\n    return Number.isFinite(number) ? number : fallback;\n}\n\nmsg.payload = {\n    timestamp: event.timestamp || new Date().toISOString(),\n\n    // 사람이 선택한 실제 정답\n    label: label,\n\n    // 기존 규칙 기반 결과: 비교용이며 ML 입력 특징으로 사용하지 않음\n    rule_result: event.result || \"UNKNOWN\",\n\n    direction: event.direction || \"NONE\",\n    arduino_state: event.arduinoState || \"UNKNOWN\",\n\n    gap_ms: numberOr(event.gap_ms, -1),\n\n    duration_A_ms: numberOr(event.duration_A_ms, 0),\n    duration_B_ms: numberOr(event.duration_B_ms, 0),\n\n    error_count_A: numberOr(event.error_count_A, 0),\n    error_count_B: numberOr(event.error_count_B, 0),\n\n    distance_A_cm: numberOr(event.distance_A_cm, -1),\n    distance_B_cm: numberOr(event.distance_B_cm, -1)\n};\n\nflow.set(\"trainingLabel\", null);\n\nnode.status({\n    fill: \"green\",\n    shape: \"dot\",\n    text: \"SAVED: \" + label + \" / SELECT NEXT LABEL\"\n});\n\nreturn msg;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 770,
+        "y": 460,
+        "wires": [
+            [
+                "aec2322a4772871b"
+            ]
+        ]
+    },
+    {
+        "id": "aec2322a4772871b",
+        "type": "json",
+        "z": "71741d5d0b838803",
+        "name": "Training Row to JSON",
+        "property": "payload",
+        "action": "str",
+        "pretty": false,
+        "x": 1020,
+        "y": 520,
+        "wires": [
+            [
+                "abeab05ff8cfe7f7"
+            ]
+        ]
+    },
+    {
+        "id": "abeab05ff8cfe7f7",
+        "type": "file",
+        "z": "71741d5d0b838803",
+        "name": "Write Training Data",
+        "filename": "C:\\Users\\jeehu\\NodeREDData\\train_gate_training_final.jsonl",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 1110,
+        "y": 600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "995393ed5ab639f9",
+        "type": "function",
+        "z": "71741d5d0b838803",
+        "name": "Build ML Request",
+        "func": "const event = msg.payload;\nmsg.aiEvent = event;\n\nif (!event || typeof event !== \"object\") {\n    return null;\n}\n\nfunction numberOr(value, fallback) {\n    const number = Number(value);\n    return Number.isFinite(number) ? number : fallback;\n}\n\nconst requestBody = {\n    direction: event.direction || \"NONE\",\n    arduino_state: event.arduinoState || \"UNKNOWN\",\n\n    gap_ms: numberOr(event.gap_ms, -1),\n\n    duration_A_ms: numberOr(event.duration_A_ms, 0),\n    duration_B_ms: numberOr(event.duration_B_ms, 0),\n\n    error_count_A: numberOr(event.error_count_A, 0),\n    error_count_B: numberOr(event.error_count_B, 0),\n\n    distance_A_cm: numberOr(event.distance_A_cm, -1),\n    distance_B_cm: numberOr(event.distance_B_cm, -1)\n};\n\nmsg.headers = {\n    \"content-type\": \"application/json\"\n};\n\nmsg.payload = JSON.stringify(requestBody);\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 770,
+        "y": 520,
+        "wires": [
+            [
+                "542e15eb55b7e93a"
+            ]
+        ]
+    },
+    {
+        "id": "542e15eb55b7e93a",
+        "type": "http request",
+        "z": "71741d5d0b838803",
+        "name": "Decision Tree Predict",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://127.0.0.1:5050/predict",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 880,
+        "y": 620,
+        "wires": [
+            [
+                "c22c9fc5050105fb"
+            ]
+        ]
+    },
+    {
+        "id": "f1aaaa81299022d7",
+        "type": "debug",
+        "z": "71741d5d0b838803",
+        "name": "ML Prediction Debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload.prediction",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1060,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "c22c9fc5050105fb",
+        "type": "function",
+        "z": "71741d5d0b838803",
+        "name": "Save Latest ML Result",
+        "func": "const result = msg.payload;\n\nif (!result || typeof result !== \"object\" || !result.prediction) {\n    return null;\n}\n\nflow.set(\"latestTrainAi\", {\n    prediction: result.prediction,\n    confidence: Number(result.confidence || 0),\n    action: result.action || \"HOLD\",\n    open_candidate: result.open_candidate === true,\n    savedAt: Date.now()\n});\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1100,
+        "y": 680,
+        "wires": [
+            [
+                "f1aaaa81299022d7"
+            ]
+        ]
+    },
+    {
+        "id": "ba6943c93cd7ee42",
+        "type": "delay",
+        "z": "71741d5d0b838803",
+        "name": "Website Sample Rate",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "2",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": true,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 180,
+        "y": 260,
+        "wires": [
+            [
+                "860fbca1e5821146"
+            ]
+        ]
+    },
+    {
+        "id": "860fbca1e5821146",
+        "type": "function",
+        "z": "71741d5d0b838803",
+        "name": "Build Website Sync",
+        "func": "\nconst p = msg.payload;\n\nif (!p || typeof p !== \"object\") {\n    return null;\n}\n\nconst ai = flow.get(\"latestTrainAi\") || {};\nconst aiAge = Date.now() - Number(ai.savedAt || 0);\nconst aiFresh = aiAge < 6000;\n\nconst aiResult = aiFresh\n    ? String(ai.prediction || \"UNKNOWN\").toUpperCase()\n    : \"MONITORING\";\n\nconst arduinoState =\n    String(p.state || \"SAFE\").toUpperCase();\n\n/*\n * 기본 상태는 Arduino의 실제 상태를 따름\n */\nlet crossingStatus =\n    arduinoState === \"DANGER\" ? \"danger\" :\n        arduinoState === \"WARNING\" ? \"warning\" :\n            \"safe\";\n\n/*\n * 최근 AI 이상 판정은 더 안전한 상태로 덮어씀\n */\nif (aiFresh) {\n    if (\n        aiResult === \"BLOCKED\" ||\n        aiResult === \"UNKNOWN\" ||\n        aiResult === \"SENSOR_FAULT\"\n    ) {\n        crossingStatus = \"danger\";\n    } else if (\n        aiResult === \"NOISE\" &&\n        crossingStatus === \"safe\"\n    ) {\n        crossingStatus = \"warning\";\n    }\n}\n\nlet confidence = Number(ai.confidence || 0);\n\n/*\n * Python 결과가 0~1이면 백분율로 변환\n */\nif (confidence <= 1) {\n    confidence *= 100;\n}\n\nconfidence = Math.max(\n    0,\n    Math.min(100, confidence)\n);\n\nconst distanceA = Number(p.distanceA);\nconst distanceB = Number(p.distanceB);\n\nmsg.payload = {\n    distance_approach_cm:\n        Number.isFinite(distanceA) ? distanceA : 999,\n\n    distance_exit_cm:\n        Number.isFinite(distanceB) ? distanceB : 999,\n\n    entry_side:\n        p.entry === \"A\" || p.entry === \"B\"\n            ? p.entry\n            : \"none\",\n\n    speed_cms: 0,\n\n    event_type: aiResult,\n\n    status:\n        crossingStatus === \"safe\"\n            ? \"normal\"\n            : crossingStatus,\n\n    crossing_status: crossingStatus,\n\n    gate_state:\n        arduinoState === \"SAFE\"\n            ? \"open\"\n            : \"closed\",\n\n    signal_state:\n        arduinoState === \"DANGER\"\n            ? \"red\"\n            : arduinoState === \"WARNING\"\n                ? \"yellow\"\n                : \"green\",\n\n    confidence:\n        Math.round(confidence * 10) / 10,\n\n    distance_km: 0,\n    approach_speed_kmh: 0\n};\n\nmsg.headers = {\n    \"Content-Type\": \"application/json\"\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 250,
+        "y": 340,
+        "wires": [
+            [
+                "6479f97176bf92b4"
+            ]
+        ]
+    },
+    {
+        "id": "6479f97176bf92b4",
+        "type": "http request",
+        "z": "71741d5d0b838803",
+        "name": "Send to Laravel",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://127.0.0.1:8000/api/v1/sync",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 280,
+        "y": 420,
+        "wires": [
+            [
+                "6c86924f6e4e9b14"
+            ]
+        ]
+    },
+    {
+        "id": "6c86924f6e4e9b14",
+        "type": "debug",
+        "z": "71741d5d0b838803",
+        "name": "Website Response Debug",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 470,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "0c5558e2566e5982",
+        "type": "serial-port",
+        "name": "Arduino Serial",
+        "serialport": "COM5",
+        "serialbaud": "9600",
+        "databits": 8,
+        "parity": "none",
+        "stopbits": 1,
+        "waitfor": "",
+        "dtr": "none",
+        "rts": "none",
+        "cts": "none",
+        "dsr": "none",
+        "newline": "\\n",
+        "bin": "false",
+        "out": "char",
+        "addchar": "String",
+        "responsetimeout": 10000
+    },
+    {
+        "id": "c4de5c9ca3afbd3f",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-node-serialport": "2.0.3"
+        }
+    }
+]
