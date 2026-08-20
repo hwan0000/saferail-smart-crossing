@@ -1,0 +1,29 @@
+{
+  "model_type": "DecisionTreeClassifier",
+  "labels": [
+    "NORMAL_PASS",
+    "BLOCKED",
+    "NOISE",
+    "UNKNOWN"
+  ],
+  "features": [
+    "direction",
+    "arduino_state",
+    "gap_ms",
+    "duration_A_ms",
+    "duration_B_ms",
+    "error_count_A",
+    "error_count_B",
+    "distance_A_cm",
+    "distance_B_cm"
+  ],
+  "sensor_fault_handling": "deterministic Node-RED rule; not learned",
+  "holdout_accuracy": 1.0,
+  "cross_validation_scores": [
+    0.75,
+    1.0,
+    1.0,
+    0.9090909090909091,
+    0.9090909090909091
+  ]
+}

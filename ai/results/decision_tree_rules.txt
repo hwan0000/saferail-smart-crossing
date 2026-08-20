@@ -1,0 +1,19 @@
+|--- number__gap_ms <= 1019.00
+|   |--- category__arduino_state_SAFE <= 0.50
+|   |   |--- number__gap_ms <= 113.50
+|   |   |   |--- number__duration_B_ms <= 2658.50
+|   |   |   |   |--- class: BLOCKED
+|   |   |   |--- number__duration_B_ms >  2658.50
+|   |   |   |   |--- class: BLOCKED
+|   |   |--- number__gap_ms >  113.50
+|   |   |   |--- class: UNKNOWN
+|   |--- category__arduino_state_SAFE >  0.50
+|   |   |--- number__distance_B_cm <= 14.50
+|   |   |   |--- class: UNKNOWN
+|   |   |--- number__distance_B_cm >  14.50
+|   |   |   |--- class: NOISE
+|--- number__gap_ms >  1019.00
+|   |--- number__duration_B_ms <= 649.00
+|   |   |--- class: NORMAL_PASS
+|   |--- number__duration_B_ms >  649.00
+|   |   |--- class: NORMAL_PASS

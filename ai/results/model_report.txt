@@ -1,0 +1,31 @@
+SafeRail Decision Tree training report
+======================================
+
+Data file: C:\Users\jeehu\NodeREDData\train_gate_training_final.jsonl
+Total learned samples: 56
+Train samples: 42
+Test samples: 14
+
+Samples per label:
+label
+NORMAL_PASS    20
+BLOCKED        20
+NOISE          10
+UNKNOWN         6
+
+Holdout accuracy: 1.000
+5-fold CV scores: [0.75, 1.0, 1.0, 0.9090909090909091, 0.9090909090909091]
+Mean CV accuracy: 0.914
+
+Classification report:
+              precision    recall  f1-score   support
+
+ NORMAL_PASS       1.00      1.00      1.00         5
+     BLOCKED       1.00      1.00      1.00         5
+       NOISE       1.00      1.00      1.00         3
+     UNKNOWN       1.00      1.00      1.00         1
+
+    accuracy                           1.00        14
+   macro avg       1.00      1.00      1.00        14
+weighted avg       1.00      1.00      1.00        14
+
